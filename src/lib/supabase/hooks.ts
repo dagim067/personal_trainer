@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "./client";
+import { getBrowserSupabase } from "./client";
 import type { BookingInsertInput, Transformation, Video } from "./queries";
 
 export function useVideos() {
   return useQuery<Video[], Error>({
     queryKey: ["videos"],
     queryFn: async () => {
+      const supabase = getBrowserSupabase();
       const result = (await supabase
         .from("videos")
         .select("*")
@@ -32,6 +33,7 @@ export function useTransformations() {
   return useQuery<Transformation[], Error>({
     queryKey: ["transformations"],
     queryFn: async () => {
+      const supabase = getBrowserSupabase();
       const result = (await supabase
         .from("transformations")
         .select("*")
@@ -65,6 +67,7 @@ export function useTransformation(slug: string | null) {
       if (!slug) {
         return null;
       }
+      const supabase = getBrowserSupabase();
 
       const result = (await supabase
         .from("transformations")
@@ -100,36 +103,54 @@ export function useBooking() {
 
   return useMutation<BookingResult, Error, BookingInsertInput, unknown>({
     mutationFn: async (bookingData) => {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
-      });
+      // Client-side booking via Supabase browser client.
+      // NOTE: This requires a publishable/anon key and appropriate DB policies.
 
-      const result = (await res.json()) as {
-        status?: string;
-        message?: string;
-        error?: string;
-      };
+      const supabase = getBrowserSupabase();
+      const { phone, ...rest } = bookingData as any;
 
-      if (!res.ok) {
-        if (res.status === 409) {
+      // Check for existing booking with same phone
+      const existing = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("phone", phone)
+        .maybeSingle();
+
+      if (existing.error) {
+        throw existing.error;
+      }
+
+      if (existing.data) {
+        return {
+          status: "alreadyBooked",
+          message:
+            "It looks like this phone number already has an active booking. Please contact us for help.",
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert([bookingData])
+        .select()
+        .single();
+
+      if (error) {
+        if ((error as any).code === "23505") {
           return {
             status: "alreadyBooked",
-            message: result.message || "You already have a booking.",
+            message:
+              "It looks like this phone number already has an active booking. Please contact us for help.",
           };
         }
 
-        throw new Error(result.error || "Booking failed");
+        throw error;
       }
 
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
 
       return {
-        status: (result.status as "created" | "alreadyBooked") || "created",
-        message:
-          result.message ||
-          "Your booking is confirmed! We'll reach out soon with next steps.",
+        status: "created",
+        message: "Your booking is confirmed! We'll reach out soon with next steps.",
       };
     },
   });

@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "export": "next export",
+    "build:export": "next build",
+    "predeploy": "npm run build:export",
+    "deploy": "gh-pages -d out",
     "start": "next start",
     "lint": "eslint"
   },
@@ -35,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "gh-pages": "^5.0.0"
   }
 }

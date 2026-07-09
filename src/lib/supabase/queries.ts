@@ -49,9 +49,23 @@ export type Booking = BookingInsertInput & {
   created_at: string;
 };
 
+function getServerSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("supabaseUrl is required.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
 export async function findBookingByPhone(
   phone: string,
 ): Promise<Booking | null> {
+  const serverSupabase = getServerSupabase();
   const { data, error } = await serverSupabase
     .from("bookings")
     .select("*")
@@ -68,6 +82,7 @@ export async function findBookingByPhone(
 export async function createBooking(
   booking: BookingInsertInput,
 ): Promise<Booking> {
+  const serverSupabase = getServerSupabase();
   const { data, error } = await serverSupabase
     .from("bookings")
     .insert([booking])
@@ -81,13 +96,8 @@ export async function createBooking(
   return data;
 }
 
-const serverSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-);
-
 export async function getVideos(): Promise<Video[]> {
+  const serverSupabase = getServerSupabase();
   const result = (await serverSupabase
     .from("videos")
     .select("*")
@@ -106,6 +116,7 @@ export async function getVideos(): Promise<Video[]> {
 }
 
 export async function getTransformations(): Promise<Transformation[]> {
+  const serverSupabase = getServerSupabase();
   const result = (await serverSupabase
     .from("transformations")
     .select("*")
@@ -126,6 +137,7 @@ export async function getTransformations(): Promise<Transformation[]> {
 export async function getTransformationBySlug(
   slug: string,
 ): Promise<Transformation | null> {
+  const serverSupabase = getServerSupabase();
   const { data, error } = await serverSupabase
     .from("transformations")
     .select("*")
