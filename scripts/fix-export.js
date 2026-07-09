@@ -21,18 +21,32 @@ function copyNestedPageAliases(dir) {
     const itemPath = path.join(dir, item.name);
 
     if (item.isDirectory() && item.name.startsWith('__next.')) {
-      const pageFile = path.join(itemPath, '__PAGE__.txt');
-      if (fs.existsSync(pageFile)) {
-        const aliasFile = path.join(dir, `${item.name}.__PAGE__.txt`);
-        if (!fs.existsSync(aliasFile)) {
-          fs.copyFileSync(pageFile, aliasFile);
-          console.log(`Created alias file: ${path.relative(outDir, aliasFile)}`);
-        }
-      }
+      copyPageAliases(itemPath, item.name, dir);
     }
 
     if (item.isDirectory()) {
       copyNestedPageAliases(itemPath);
+    }
+  }
+}
+
+function copyPageAliases(rootDir, rootName, parentDir, segments = []) {
+  const items = fs.readdirSync(rootDir, { withFileTypes: true });
+
+  for (const item of items) {
+    const itemPath = path.join(rootDir, item.name);
+
+    if (item.isFile() && item.name === '__PAGE__.txt') {
+      const aliasName = `${rootName}${segments.length ? `.${segments.join('.')}` : ''}.__PAGE__.txt`;
+      const aliasPath = path.join(parentDir, aliasName);
+      if (!fs.existsSync(aliasPath)) {
+        fs.copyFileSync(itemPath, aliasPath);
+        console.log(`Created alias file: ${path.relative(outDir, aliasPath)}`);
+      }
+    }
+
+    if (item.isDirectory()) {
+      copyPageAliases(itemPath, rootName, parentDir, [...segments, item.name]);
     }
   }
 }
