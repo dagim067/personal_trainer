@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
-    "build:export": "next build && node -e \"require('fs').copyFileSync('.nojekyll','out/.nojekyll')\"",
+    "build:export": "next build && node scripts/fix-export.js",
     "predeploy": "npm run build:export",
     "deploy": "gh-pages -d out -t true",
     "start": "next start",
