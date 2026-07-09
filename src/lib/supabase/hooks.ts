@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getBrowserSupabase } from "./client";
 import type { BookingInsertInput, Transformation, Video } from "./queries";
+import { fallbackTransformations } from "./fallback-transformations";
 
 export function useVideos() {
   return useQuery<Video[], Error>({
@@ -33,22 +34,27 @@ export function useTransformations() {
   return useQuery<Transformation[], Error>({
     queryKey: ["transformations"],
     queryFn: async () => {
-      const supabase = getBrowserSupabase();
-      const result = (await supabase
-        .from("transformations")
-        .select("*")
-        .order("featured", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(4)) as {
-        data: Transformation[] | null;
-        error: Error | null;
-      };
+      try {
+        const supabase = getBrowserSupabase();
+        const result = (await supabase
+          .from("transformations")
+          .select("*")
+          .order("featured", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(4)) as {
+          data: Transformation[] | null;
+          error: Error | null;
+        };
 
-      if (result.error) {
-        throw result.error;
+        if (result.error) {
+          throw result.error;
+        }
+
+        return result.data ?? [];
+      } catch (error) {
+        console.error("useTransformations fallback error:", error);
+        return fallbackTransformations;
       }
-
-      return result.data ?? [];
     },
     staleTime: 1000 * 60 * 5,
   });
