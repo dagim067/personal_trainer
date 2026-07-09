@@ -150,7 +150,8 @@ export function useBooking() {
 
       return {
         status: "created",
-        message: "Your booking is confirmed! We'll reach out soon with next steps.",
+        message:
+          "Your booking is confirmed! We'll reach out soon with next steps.",
       };
     },
   });

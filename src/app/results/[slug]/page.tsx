@@ -32,7 +32,9 @@ export async function generateStaticParams() {
   return (items ?? []).map((t) => ({ slug: String(t.slug) }));
 }
 
-export default async function TransformationPage({ params }: TransformationPageProps) {
+export default async function TransformationPage({
+  params,
+}: TransformationPageProps) {
   const { slug } = params;
   return <TransformationPageClient slug={slug} />;
 }
