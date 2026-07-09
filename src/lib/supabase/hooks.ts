@@ -75,20 +75,26 @@ export function useTransformation(slug: string | null) {
       }
       const supabase = getBrowserSupabase();
 
-      const result = (await supabase
-        .from("transformations")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle()) as {
-        data: Transformation | null;
-        error: Error | null;
-      };
-      if (result.error) {
-        console.error("Query error:", result.error);
-        throw result.error;
-      }
+      try {
+        const result = (await supabase
+          .from("transformations")
+          .select("*")
+          .eq("slug", slug)
+          .maybeSingle()) as {
+          data: Transformation | null;
+          error: Error | null;
+        };
 
-      return result.data ?? null;
+        if (result.error) {
+          console.error("Query error:", result.error);
+          return fallbackTransformations.find((item) => item.slug === slug) ?? null;
+        }
+
+        return result.data ?? fallbackTransformations.find((item) => item.slug === slug) ?? null;
+      } catch (error) {
+        console.error("useTransformation fallback error:", error);
+        return fallbackTransformations.find((item) => item.slug === slug) ?? null;
+      }
     },
     enabled: Boolean(slug),
     staleTime: 1000 * 60 * 5,
